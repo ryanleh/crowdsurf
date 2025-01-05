@@ -1,0 +1,9 @@
+[submodule "external/cutlass"]
+	path = external/cutlass
+	url = https://github.com/NVIDIA/cutlass
+[submodule "external/SEAL"]
+	path = external/SEAL
+	url = https://github.com/ryanleh/SEAL
+[submodule "external/hintless_pir"]
+	path = external/hintless_pir
+	url = https://github.com/ryanleh/hintless_pir
