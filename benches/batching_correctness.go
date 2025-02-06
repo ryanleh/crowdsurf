@@ -97,6 +97,6 @@ func benchmarkDpirCorrectness[T m.Elem]() {
             client.Free()
             server.Free()
         }
-        fmt.Println("\n");
+        fmt.Println("");
 	}
 }
