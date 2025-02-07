@@ -273,11 +273,11 @@ void key_enc_preprocessed(skey_t *key, plaintext_t *pt, ciphertext_t *ct) {
 }
 
 size_t ct_data_size(ciphertext_t *ct) {
-    return static_cast<size_t>(ct->ct.dyn_array().save_size());
+    return static_cast<size_t>(ct->ct.dyn_array().save_size(seal::compr_mode_type::none));
 }
 
 void ct_store_data(ciphertext_t *ct, uint8_t *dst, size_t sz, size_t *written) {
-    *written = ct->ct.dyn_array().save((seal_byte*) dst, sz);
+    *written = ct->ct.dyn_array().save((seal_byte*) dst, sz, seal::compr_mode_type::none);
 }
 
 size_t dummy_ct_size(context_t *ctx) {
@@ -290,7 +290,7 @@ size_t dummy_ct_size(context_t *ctx) {
 
     // Sample a new dummy array
     DynArray<uint64_t> buf(ct_size);
-    return buf.save_size();
+    return buf.save_size(seal::compr_mode_type::none);
 }
 
 void store_dummy_cts(context_t *ctx, uint64_t *c_seed, size_t samples, uint8_t *dst, size_t *sizes) {
@@ -313,7 +313,7 @@ void store_dummy_cts(context_t *ctx, uint64_t *c_seed, size_t samples, uint8_t *
         // Sample a new dummy array
         DynArray<uint64_t> buf(ct_size);
         util::sample_poly_uniform(prg, parms, (std::size_t)samples, buf.begin());
-        sizes[i] = buf.save((seal_byte*) (dst + i * ser_size), ser_size);
+        sizes[i] = buf.save((seal_byte*) (dst + i * ser_size), ser_size, seal::compr_mode_type::none);
         samples -= to_encrypt;
     }
 }

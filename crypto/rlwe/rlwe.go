@@ -45,6 +45,7 @@ func NewContext[T m.Elem](pMod, n uint64, mod_switch bool) *Context[T] {
 	//
 	// TODO: Move this to params
 	if pMod == 0 {
+		pMod = 0
 		pMod = 95640378
 	}
 
