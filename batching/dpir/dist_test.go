@@ -103,6 +103,7 @@ func testBasicSplit[T m.Elem](t *testing.T, bitsPer, pMod uint64) {
     alpha := 0.1
 	types := [][]PirType{
 		{Simple, PBC},
+		{SimpleHybrid, PBC},
 		{SimpleHybrid, PBCAngel},
 	}
 	for i := range rows {
@@ -119,7 +120,7 @@ func TestBasicSplit32(t *testing.T) {
 }
 
 func TestBasicSplit64(t *testing.T) {
-	testBasicSplit[m.Elem64](t, 16, uint64(1<<16))
+	testBasicSplit[m.Elem64](t, 15, uint64(1<<16))
 	testBasicSplit[m.Elem64](t, 24, uint64(1<<16))
 	testBasicSplit[m.Elem64](t, 48, uint64(1<<16))
 }

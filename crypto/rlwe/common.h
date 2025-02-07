@@ -120,7 +120,7 @@ public:
         new (&decryptor) Decryptor(context, this->sk);
     };
 
-    virtual ~CryptoKey() {};
+    //virtual ~CryptoKey() {};
 
     KeyGenerator keygen;
     SecretKey sk;

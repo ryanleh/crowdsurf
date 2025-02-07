@@ -158,8 +158,8 @@ func (c *SimpleClient[T]) Recover(secrets []Secret[T], answers []Answer[T]) []*m
 		if secret.innerSecret == nil && secret.rlweSecret == nil {
 			continue
 		}
-// TODO
-//		defer secret.Free()
+        // TODO: Don't free secret if using hint compression
+		defer secret.Free()
 
 		var answer *SimpleAnswer[T]
 		if c.dbInfo.gpu {
@@ -173,9 +173,6 @@ func (c *SimpleClient[T]) Recover(secrets []Secret[T], answers []Answer[T]) []*m
 		} else {
 			answer = answers[i].(*SimpleAnswer[T])
 		}
-
-		// TODO: Could do this while waiting for an answer if we decide to
-		// benchmark decryption time. Or just parallelize.
 
         // TODO: Add a hint compression option for this
 		token := m.Mul(c.hint, secret.innerSecret)

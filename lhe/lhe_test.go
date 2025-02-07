@@ -120,7 +120,7 @@ func testLHE[T m.Elem](t *testing.T, bitsPer, pMod uint64) {
 		c, s, m := randInstance[T](Simple, bitsPer, dbRows[i], dbCols[i], pMod, false)
 		testLHEHelper[T](t, c, s, m, batchSize)
 
-		c, s, m = randInstance[T](SimpleHybrid, bitsPer, dbRows[i], dbCols[i], pMod, false)
+        c, s, m = randInstance[T](SimpleHybrid, bitsPer, dbRows[i], dbCols[i], pMod, false)
 		testLHEHelper[T](t, c, s, m, batchSize)
 
         // TODO: This currently doesn't working w/ > 32-bit bitsPer (see

@@ -120,15 +120,14 @@ func testBasicBatch[T m.Elem](t *testing.T, bitsPer, pMod uint64) {
 func TestBasicBatch32(t *testing.T) {
 	testBasicBatch[m.Elem32](t, 8, uint64(1<<8))
 	testBasicBatch[m.Elem32](t, 24, uint64(1<<8))
-	//testBasicBatch[m.Elem32](t, 48, uint64(1<<8))
+	testBasicBatch[m.Elem32](t, 48, uint64(1<<8))
 }
 
-// TODO: Not working for some reason
-//func TestBasicBatch64(t *testing.T) {
-//	testBasicBatch[m.Elem64](t, 16, uint64(1<<16))
-//	testBasicBatch[m.Elem64](t, 24, uint64(1<<16))
-//	//testBasicBatch[m.Elem64](t, 48, uint64(1<<16))
-//}
+func TestBasicBatch64(t *testing.T) {
+	testBasicBatch[m.Elem64](t, 16, uint64(1<<16))
+	testBasicBatch[m.Elem64](t, 24, uint64(1<<16))
+	testBasicBatch[m.Elem64](t, 48, uint64(1<<16))
+}
 
 func testPBC(t *testing.T, mode Mode) {
 	// Generate some random elements in a DB
