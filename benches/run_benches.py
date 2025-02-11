@@ -164,12 +164,12 @@ if __name__ == '__main__':
 
     if args.preprocessing or run_all:
         (df_pre_lwe, df_pre_hybrid) = run_lhe_bench(False, args.rerun_lwe)
-        print(f"Plain LWE Preproc. Bench:\n{df_pre_lwe.to_markdown()}\n")
+        print(f"\nPlain LWE Preproc. Bench:\n{df_pre_lwe.to_markdown()}\n")
         print(f"Hybrid Preproc. Bench:\n{df_pre_hybrid.to_markdown()}\n")
 
     if args.query or run_all:
         (df_query_lwe, df_query_hybrid) = run_lhe_bench(True, False)
-        print(f"Plain LWE Query Bench:\n{df_query_lwe.to_markdown()}\n")
+        print(f"\nPlain LWE Query Bench:\n{df_query_lwe.to_markdown()}\n")
         print(f"Hybrid Query Bench:\n{df_query_hybrid.to_markdown()}\n")
 
 
