@@ -1,5 +1,5 @@
 import argparse
-
+import numpy as np
 import pandas as pd
 import re
 import subprocess
@@ -17,10 +17,8 @@ import subprocess
 # 4	          838	 59484	   54976875	 36556
 db_sizes_gb = [0.25, 0.5, 1, 2, 3, 4]
 mod_ps = {
-    #32: [1186, 997,	997, 838, 838, 838],
-    #64: [77749042, 77749042, 65378890, 65378890, 65378890, 54976875],
-    32: [1186],
-    64: [77749042],
+    32: [1186, 997,	997, 838, 838, 838],
+    64: [77749042, 77749042, 65378890, 65378890, 65378890, 54976875],
 }
 sqrt_Ns = {
     32: [14331, 20519, 29366, 41529, 51515, 59484],
@@ -103,22 +101,25 @@ def run_lhe_bench(query=True, rerun_lwe=False):
                 row[metric] = parser(out, db_sizes_gb[i])
                 df_lwe.loc[len(df_lwe)] = row
             else:
-                # Just copy the TODO
-                row[metric] = None
+                # Copy the row from above here–we'll fill in the exact value
+                # later
+                row[metric] = np.nan
                 df_lwe.loc[len(df_lwe)] = row
 
-    
     # Compute improvements
     if not query and not rerun_lwe:
-        # TODO: If here, we add in old benchmark numbers for comparison purposes
+        # We use old benchmark numbers (which we calibrate) instead of
+        # re-running
         old_pre_tput_s = {
             32: [0.001811725487, 0.001635269492, 0.001490312966, 0.001441618072, 0.001345297513],
             64: [0.0005891085609, 0.0005879240402, 0.00056891559, 0.0005692572616, 0.0005597631083],
         }
-        # First, compute the delta between the saved measurement and the
+
+        # Compute the delta between the saved measurement and the
         # re-measured one
         delta = df_lwe.loc[0, "tput_gb_s"] / old_pre_tput_s[32][0] 
 
+        # Input adjusted numbers to the saved dataframes
         for log_q in [32, 64]:
             filtered_df = df_lwe[df_lwe["log_q"] == log_q]
             for (i, (index, row)) in enumerate(filtered_df.iterrows()):
@@ -127,17 +128,12 @@ def run_lhe_bench(query=True, rerun_lwe=False):
     
     # Compute the change between the LWE and hybrid setups
     for i in range(len(df_hybrid)):
-        improvement = df_lwe.loc[i, metric] / df_hybrid.loc[i, metric]
+        improvement = df_hybrid.loc[i, metric] / df_lwe.loc[i, metric] 
         df_hybrid.loc[i, "improvement"] = improvement
 
-    breakpoint()
-    
     return (df_lwe, df_hybrid)
 
-## TODO: Store the database on disk, and be able to load back up and start over
-## on failure
-##
-## TODO: Could even output the graph if we want
+# TODO: Output nice graphs
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
