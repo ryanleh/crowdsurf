@@ -33,7 +33,12 @@ func benchmarkQuery[T m.Elem]() testing.BenchmarkResult {
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			client.Query(input)
+            secrets, _ := client.Query(input)
+            for i := range secrets {
+                secret := secrets[i].(*lhe.SimpleSecret[T])
+                defer secret.Free()
+            }
+
 		}
 	})
 	return result
