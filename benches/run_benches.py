@@ -83,10 +83,14 @@ def run_lhe_bench(query=True, rerun_lwe=False):
 
     for log_q in [32, 64]:
         for (i, (p, sqrt_N)) in enumerate(zip(mod_ps[log_q], sqrt_Ns[log_q])):
+            # We didn't benchmark 3GB for preprocessing
+            if not query and db_sizes_gb[i] == 3:
+                continue
+            
             # 1) Run the hybrid benchmark
             (out, row) = run_bench(
                 bench_string, db_sizes_gb[i], log_q, p, sqrt_N, "hybrid",
-                iters=10
+                iters=5
             )
             row[metric] = parser(out, db_sizes_gb[i])
             df_hybrid.loc[len(df_hybrid)] = row
@@ -129,6 +133,8 @@ def run_lhe_bench(query=True, rerun_lwe=False):
     # Compute the change between the LWE and hybrid setups
     for i in range(len(df_hybrid)):
         improvement = df_hybrid.loc[i, metric] / df_lwe.loc[i, metric] 
+        if query:
+            improvement = 1 / improvement
         df_hybrid.loc[i, "improvement"] = improvement
 
     return (df_lwe, df_hybrid)
