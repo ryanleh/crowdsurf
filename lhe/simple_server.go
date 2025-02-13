@@ -23,6 +23,12 @@ type SimpleServer[T m.Elem] struct {
 
 	// GPU stuff
 	gpuCtx *gpu.Context[T]
+
+    // Whether we're using hint compression
+    //
+    // TODO: This currently is only supported when running with the `service`
+    // folder
+    compressHint bool
 }
 
 func MakeSimpleServer[T m.Elem](
@@ -31,6 +37,7 @@ func MakeSimpleServer[T m.Elem](
 	cryptoCtx *crypto.Context[T],
 	seed *rand.PRGKey,
 	mode Mode,
+    compressHint bool,
 	bench bool, // TODO: Remove
 ) *SimpleServer[T] {
 	params := cryptoCtx.Params
@@ -82,6 +89,7 @@ func MakeSimpleServer[T m.Elem](
 		hint,
 		cryptoCtx,
 		gpuCtx,
+        compressHint,
 	}
 }
 
@@ -93,13 +101,15 @@ func (s *SimpleServer[T]) Free() {
 }
 
 func (s *SimpleServer[T]) Hint() Hint[T] {
-	return &SimpleHint[T]{
+    hint := &SimpleHint[T]{
 		Seed:   s.seed,
 		Params: s.cryptoCtx.Params,
 		DBInfo: s.db.Info,
-		Hint:   s.hint,
 		Mode:   s.mode,
+        Hint:   s.hint,
+        CompressHint: s.compressHint,
 	}
+	return hint
 }
 
 func (s *SimpleServer[T]) SetBatch(batch uint64) {

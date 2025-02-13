@@ -32,7 +32,7 @@ func randInstance() lhe.Server[m.Elem32] {
 
 	// Build server objects
 	ctx := crypto.NewContext[m.Elem32](m.Elem32(0).Bitlen(), cols, pMod)
-	return lhe.MakeSimpleServer[m.Elem32](matrix, bitsPer, ctx, &key, lhe.Hybrid, true)
+	return lhe.MakeSimpleServer[m.Elem32](matrix, bitsPer, ctx, &key, lhe.Hybrid, true, true)
 }
 
 func main() {

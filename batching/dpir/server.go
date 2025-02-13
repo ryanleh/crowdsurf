@@ -66,6 +66,7 @@ func MakeServer[T m.Elem](
 				ctx,
 				prg.GenPRGKey(),
 				lhe.None,
+                false,
 				bench,
 			)
 			server.SetBatch(load)
@@ -78,6 +79,7 @@ func MakeServer[T m.Elem](
 				ctx,
 				prg.GenPRGKey(),
 				lhe.Hybrid,
+                false,
 				bench,
 			)
 			server.SetBatch(load)

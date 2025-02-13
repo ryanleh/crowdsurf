@@ -19,7 +19,7 @@ func benchmarkQuery[T m.Elem]() testing.BenchmarkResult {
 	ctx := crypto.NewContext[T](T(0).Bitlen(), *cols, *pMod)
 	key := rand.RandomPRGKey()
 	client := &lhe.SimpleClient[T]{}
-	server := lhe.MakeSimpleServer(matrix, *bitsPer, ctx, key, mode, true)
+	server := lhe.MakeSimpleServer(matrix, *bitsPer, ctx, key, mode, false, true)
 	defer client.Free()
 	defer server.Free()
 

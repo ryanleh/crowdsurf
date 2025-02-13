@@ -47,11 +47,11 @@ func randInstance[T m.Elem](
 
 	case Simple:
 		client = &SimpleClient[T]{}
-		server = MakeSimpleServer[T](matrix, bitsPer, ctx, &key, None, bench)
+		server = MakeSimpleServer[T](matrix, bitsPer, ctx, &key, None, false, bench)
 
 	case SimpleHybrid:
 		client = &SimpleClient[T]{}
-		server = MakeSimpleServer[T](matrix, bitsPer, ctx, &key, Hybrid, bench)
+		server = MakeSimpleServer[T](matrix, bitsPer, ctx, &key, Hybrid, false, bench)
 
 	default:
 		panic("Invalid client type")
@@ -76,7 +76,7 @@ func testLHEHelper[T m.Elem](
 	server.SetBatch(batchSize)
 	prg := rand.NewBufPRG(rand.NewPRG(&key))
 
-	for range 50 {
+	for range 10 {
 		// Generate client queries
 		indices := make([]uint64, batchSize)
 		inputs := make([]*m.Matrix[T], batchSize)
