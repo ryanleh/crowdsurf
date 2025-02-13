@@ -30,7 +30,7 @@ First, install Go following the directions [here](https://go.dev/doc/install).
 
 Next, pull in external submodules:
 ```
-git submodule update --init`
+git submodule update --init
 ```
 Install the required C++ libraries:
 ```
@@ -46,6 +46,51 @@ Finally, test that everything is working:
 go test ./...
 ```
 
+## Experiments
+
+Below we outline how to recreate several of the key figures in our paper
+
+### Figures 3, 4, and 9
+
+The numbers for all of these figures can be obtained by running the `benches/run_benches.py`. In particular, to recreate Figure 3 run:
+```
+python3 run_benches.py -q
+```
+to recreate Figure 4 run:
+```
+python3 run_benches.py -p
+```
+and to recreate Figure 9 run:
+```
+python3 run_benches.py -b
+```
+
+### Table 12
+
+To get end-to-end estimates for the costs of CrowdSurf, you will need access to three machines: a client, an instance for hint compression, and an instance for running PIR.
+
+On the hint-compression machine, run the following two commands in different shells:
+```
+cd external/hintless_pir/dpir
+bazel run -c opt //dpir:dpir-server
+```
+and
+```
+cd service/bin/server
+go run . "hint"
+```
+
+On the PIR machine, run the following command:
+```
+go run . "pir"
+```
+Finally, make sure the client machine has access to both machines on port 8728/8729 and run the following command:
+```
+cd service
+python3 run_client.py $IP_HINT $IP2_PIR
+```
+which will output the costs displayed in Table 12.
+
 ## License
 
 CrowdSurf is licensed under either of the following licenses, at your discretion.
@@ -53,4 +98,4 @@ CrowdSurf is licensed under either of the following licenses, at your discretion
  * Apache License Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
  * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
-Unless you explicitly state otherwise, any contribution submitted for inclusion in Muse by you shall be dual licensed as above (as defined in the Apache v2 License), without any additional terms or conditions.
+Unless you explicitly state otherwise, any contribution submitted for inclusion in CrowdSurf by you shall be dual licensed as above (as defined in the Apache v2 License), without any additional terms or conditions.
