@@ -18,8 +18,8 @@ type HCServer struct {
 }
 
 // Create a new RPC server
-func StartHCServer(rows, cols uint64) *HCServer {
-    server := &HCServer{hint_compr.NewServer(rows, cols), nil}
+func StartHCServer() *HCServer {
+    server := &HCServer{}
 
 	// Start RPC server
     RegisterTypes()
@@ -51,6 +51,11 @@ func (s *HCServer) StopServer() {
 // RPC called to initiatlize a new client for evaluation
 func (s *HCServer) ClientInitRPC(args HintInitRequest, response *HintInitResponse) error {
 	log.Printf("Got ClientInit RPC Call")
+
+    // Start a new hint compression server
+    // 
+    // TODO: Kill old server if it exists
+    s.Server = hint_compr.NewServer(args.Hint.Rows(), args.Hint.Cols())
 
 	// Generate new client token + set client state
     start := time.Now()

@@ -37,16 +37,16 @@ func (c *Client) Query(keys []*m.Matrix[m.Elem32]) []byte {
     return c.RecvBytes()
 }
 
-func (c *Client) Recover(answer []byte) [][]m.Elem32 {
+func (c *Client) Recover(answer []byte, rows uint64) [][]m.Elem32 {
     // TODO: Copy for now
     c.SendBytes(answer)
    
     results := make([][]m.Elem32, c.batchSize)
     for i := range c.batchSize {
         result := c.RecvUints()
-        results[i] = make([]m.Elem32, len(result))
-        for j, val := range result {
-            results[i][j] = (m.Elem32)(val)
+        results[i] = make([]m.Elem32, rows)
+        for j := range rows {
+            results[i][j] = (m.Elem32)(result[j])
         }
     }
 

@@ -28,7 +28,11 @@ type Client struct {
     hcClient    *hint_compr.Client
 }
 
-func MakeClient(pirAddr, hcAddr string, lheType lhe.LHEType, batchSize uint64) *Client {
+func MakeClient(
+    pirAddr, hcAddr string,
+    lheType lhe.LHEType,
+    rows, cols, pMod, bitsPer, batchSize uint64,
+) *Client {
     RegisterTypes()
 	
     // Connect to PIR server
@@ -41,8 +45,15 @@ func MakeClient(pirAddr, hcAddr string, lheType lhe.LHEType, batchSize uint64) *
     pirRpcClient := rpc.NewClient(pirConn)
 
 	// Fetch hints / DB info / seeds from server
+    request := PirInitRequest {
+        Rows: rows,
+        Cols: cols,
+        PMod: pMod,
+        BitsPer: bitsPer,
+        BatchSize: batchSize,
+    }
 	var reply PirInitResponse
-	err = pirRpcClient.Call("Server.ClientInitRPC", PirInitRequest{}, &reply)
+	err = pirRpcClient.Call("Server.ClientInitRPC", request, &reply)
 	if err != nil {
 		log.Println("Error initializing client")
 		panic(err)
@@ -155,7 +166,7 @@ func (c *Client) Answer(keys []lhe.Secret[m.Elem32]) (float64, float64, []*m.Mat
                 log.Printf("Error making query")
                 panic(err)
             }
-            results := c.hcClient.Recover(reply.Answers)
+            results := c.hcClient.Recover(reply.Answers, c.DBInfo().L)
             hTime = float64(time.Since(start).Milliseconds())
 
             // TODO: Better conversion
@@ -184,6 +195,18 @@ func (c *Client) Answer(keys []lhe.Secret[m.Elem32]) (float64, float64, []*m.Mat
         panic("Unreachable")
     }
 }
+
+func (c *Client) GetBatchCapacity(hintTimeMs, pirTimeMs float64) uint64 {
+    request := PirBatchRequest{hintTimeMs, pirTimeMs}
+    var reply PirBatchResponse
+    err := c.pirRpcClient.Call("Server.BatchCapacityRPC", request, &reply)
+    if err != nil {
+        log.Printf("Error asking for batch capacity")
+        panic(err)
+    }
+    return reply.BatchCapacity
+}
+
 
 func (c *Client) GetConns() (*CountingIO, *CountingIO) {
 	return c.pirConn, c.hcConn

@@ -312,7 +312,7 @@ void store_dummy_cts(context_t *ctx, uint64_t *c_seed, size_t samples, uint8_t *
 
         // Sample a new dummy array
         DynArray<uint64_t> buf(ct_size);
-        util::sample_poly_uniform(prg, parms, (std::size_t)samples, buf.begin());
+        util::sample_poly_uniform(prg, parms, (std::size_t)to_encrypt, buf.begin());
         sizes[i] = buf.save((seal_byte*) (dst + i * ser_size), ser_size, seal::compr_mode_type::none);
         samples -= to_encrypt;
     }

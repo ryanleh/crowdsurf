@@ -16,7 +16,7 @@ hint_latency_ms = {
 pir_batch = {
     "popular": 1300, # GPU
     "full": 275, # GPU
-    "baseline": 10.64, # CPU
+    "baseline": 21, # CPU
 }
 
 #
@@ -56,7 +56,7 @@ bucket_params = {
 shards = {
     "popular": [1, 1],
     "full": [3, 16],
-    "baseline": [6, 12]
+    "baseline": [6, 24]
 }
 
 def compute_metrics(shard_type, pir_type="cpu", round_to=3):
