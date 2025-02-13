@@ -53,6 +53,7 @@ func MakeServer[T m.Elem](
 			crypto.NewContext[T](T(0).Bitlen(), cols[i], pMods[i]),
 			prg.GenPRGKey(),
 			lhe.Hybrid,
+            false,
 			bench,
 		)
 	}

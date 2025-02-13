@@ -32,7 +32,7 @@ func benchmarkDpirCorrectness[T m.Elem]() {
         // 
         // NOTE: Hardcoded server type for brevity
         ctx := crypto.NewContext[T](T(0).Bitlen(), cols, pMod)
-        server := lhe.MakeSimpleServer[T](matrix, bits[i], ctx, prg.GenPRGKey(), lhe.None, true)
+        server := lhe.MakeSimpleServer[T](matrix, bits[i], ctx, prg.GenPRGKey(), lhe.None, false, true)
         server.SetBatch(bs[i])
 
         // Initialize the client
@@ -67,7 +67,7 @@ func benchmarkDpirCorrectness[T m.Elem]() {
             //
             // NOTE: Hardcoded server type for brevity
             ctx = crypto.NewContext[T](T(0).Bitlen(), popCols, popPMod)
-            server := lhe.MakeSimpleServer[T](popMatrix, bits[i], ctx, prg.GenPRGKey(), lhe.None, true)
+            server := lhe.MakeSimpleServer[T](popMatrix, bits[i], ctx, prg.GenPRGKey(), lhe.None, false, true)
 
             // Initialize the client
             client := &lhe.SimpleClient[T]{}

@@ -21,15 +21,28 @@ type SimpleClient[T m.Elem] struct {
 
 	// Context for crypto objects
 	ctx *crypto.Context[T]
+
+    // Whether we're using hint compression
+    //
+    // TODO: This currently is only supported when running with the `service`
+    // folder
+    compressHint bool
 }
 
 func (c *SimpleClient[T]) Init(h Hint[T]) {
 	// Copy relevant fields
-	hint := h.(*SimpleHint[T])
+    
+    hint := h.(*SimpleHint[T])
+    if hint.Hint == nil {
+        c.compressHint = true
+    } else {
+        c.compressHint = false
+    }
 	c.seedA = hint.Seed
 	c.dbInfo = hint.DBInfo
-	c.hint = hint.Hint
 	c.mode = hint.Mode
+	c.hint = hint.Hint
+    c.compressHint = hint.CompressHint
 
 	// Initialize crypto contexts
 	c.ctx = crypto.NewContext[T](hint.Params.LogQ, hint.Params.M, hint.Params.P)
@@ -158,8 +171,11 @@ func (c *SimpleClient[T]) Recover(secrets []Secret[T], answers []Answer[T]) []*m
 		if secret.innerSecret == nil && secret.rlweSecret == nil {
 			continue
 		}
-        // TODO: Don't free secret if using hint compression
-		defer secret.Free()
+
+        // TODO: E2E tests currently rerun with the same secret multiple times
+        if !c.compressHint {
+            defer secret.Free()
+        }
 
 		var answer *SimpleAnswer[T]
 		if c.dbInfo.gpu {
@@ -175,8 +191,12 @@ func (c *SimpleClient[T]) Recover(secrets []Secret[T], answers []Answer[T]) []*m
 		}
 
         // TODO: Add a hint compression option for this
-		token := m.Mul(c.hint, secret.innerSecret)
-        //token := secret.innerSecret
+        var token *m.Matrix[T]
+        if c.compressHint {
+            token = secret.innerSecret
+        } else {
+            token = m.Mul(c.hint, secret.innerSecret)
+        }
 
 		// Subtract `H*s` from ciphertext
 		ans := answer.Answer

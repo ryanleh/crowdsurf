@@ -26,11 +26,12 @@ const (
 
 // Hint
 type SimpleHint[T m.Elem] struct {
-	Seed   *rand.PRGKey
-	Params *crypto.Params
-	DBInfo *DBInfo
-	Hint   *m.Matrix[T]
-	Mode   Mode
+	Seed         *rand.PRGKey
+	Params       *crypto.Params
+	DBInfo       *DBInfo
+	Hint         *m.Matrix[T]
+	Mode         Mode
+    CompressHint bool
 }
 
 // Secret

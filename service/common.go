@@ -7,7 +7,13 @@ import (
 )
 
 // PIR Structs
-type PirInitRequest struct{}
+type PirInitRequest struct{
+    Rows       uint64 
+    Cols       uint64 
+    PMod       uint64 
+    BitsPer    uint64 
+    BatchSize  uint64 
+}
 
 type PirInitResponse struct {
     Params   lhe.Hint[m.Elem32] 
@@ -25,6 +31,14 @@ type PirAnswerResponse struct {
 	Answers []lhe.Answer[m.Elem32]
 }
 
+type PirBatchRequest struct {
+    HintTimeMs float64
+    PirTimeMs float64
+}
+
+type PirBatchResponse struct {
+    BatchCapacity uint64
+}
 
 // Hint Compression structs
 type HintInitRequest struct{

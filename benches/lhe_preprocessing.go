@@ -17,7 +17,7 @@ func benchmarkPreprocessing[T m.Elem]() testing.BenchmarkResult {
 	matrix := m.Rand[m.Elem32](prg, *rows*numLimbs, *cols, 0)
 	ctx := crypto.NewContext[T](T(0).Bitlen(), *cols, *pMod)
 	db := lhe.NewDB(matrix.Data(), *bitsPer, ctx.Params.M, ctx.Params.P)
-
+    
 	var result testing.BenchmarkResult
 	if mode == lhe.Hybrid {
 		// Generate A polynomial seeds

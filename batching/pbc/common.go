@@ -18,7 +18,9 @@ const D uint64 = 3
 const MAX_CUCKOO_ITERS uint64 = 2000
 
 // Basic bucketing constants
-const P uint64 = 3
+//
+// TODO: Figure out how to do this
+const P uint64 = 2
 
 // An enum representing which type of PBC to use
 type Mode int

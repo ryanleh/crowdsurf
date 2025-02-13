@@ -71,7 +71,7 @@ func runBench[T m.Elem](benchType string) {
         computeSizes()
 
 	default:
-		panic("Invalid bench name")
+        panic(fmt.Sprintf("Invalid bench name %s", benchType))
 	}
 }
 
