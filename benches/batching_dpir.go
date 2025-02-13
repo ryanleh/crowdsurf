@@ -19,7 +19,7 @@ func benchmarkDPIR[T m.Elem]() {
 	for i := range bs {
         fmt.Printf("---------\nBatch size %d\n---------\n", bs[i])
 
-        // Generate a random instancej
+        // Generate a random instance
         numLimbs := uint64(math.Ceil(float64(bits[i]) / 32.0))
         elemWidth := uint64(math.Ceil(float64(bits[i]) / math.Log2(float64(batchPMods[i]))))
         matrix := m.Rand[m.Elem32](prg, (batchRows[i]/elemWidth)*numLimbs, batchCols[i], 0)
@@ -125,7 +125,7 @@ func benchmarkDPIR[T m.Elem]() {
 
         avgTimeSec := alpha * popSec + (1 - alpha) * fullSec
         queriesSec := (float64(bs[i]) * (1 - avgErr)) / avgTimeSec
-        fmt.Printf("Queries-per-sec: %0.2f s\n", queriesSec)
+        fmt.Printf("Queries-per-sec: %0.2f Q/s\n", queriesSec)
 
         client.Free()
         server.Free()

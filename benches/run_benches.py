@@ -25,28 +25,49 @@ sqrt_Ns = {
     64: [8945, 12650, 18190, 25724, 31506, 36556],
 }
 
-def run_bench(bench, db_size, log_q, p, sqrt_N, mode, iters=None):
+def run_bench(
+    bench,
+    db_size=None,
+    log_q=None,
+    p=None,
+    sqrt_N=None,
+    mode=None,
+    hash_mode=None,
+    packing="balanced",
+    iters=None
+):
     result = None
     try:
         cmd = [
-            'go', 'run', '.', f'-bench={bench}', f'-q={log_q}',
-            f'-p={p}', f'-rows={sqrt_N}', f'-cols={sqrt_N}', f'-mode={mode}',
-            f'-test.benchtime={iters}x' if iters else ''
+            'go', 'run', '.', f'-bench={bench}',
+            f'-packing={packing}',
+            f'-q={log_q}' if log_q else None,
+            f'-p={p}' if p else None,
+            f'-rows={sqrt_N}' if sqrt_N else None,
+            f'-cols={sqrt_N}' if sqrt_N else None,
+            f'-mode={mode}' if mode else None,
+            f'-hash={hash_mode}' if hash_mode else None,
+            f'-test.benchtime={iters}x' if iters else None
         ]
-        print(f"Running command: `{" ".join(cmd)}`")
+        cmd = list(filter(None, cmd))
+        print(f"Running command: {" ".join(cmd)}")
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
             check=True,
         )
-        row = {
-            "size": db_size,
-            "log_q": log_q,
-            "p": p,
-            "sqrt_N": sqrt_N,
-        }
-        return (result.stdout, row)
+        # If `db_size` is passed then we're running an LHE query
+        if db_size:
+            row = {
+                "size": db_size,
+                "log_q": log_q,
+                "p": p,
+                "sqrt_N": sqrt_N,
+            }
+            return (result.stdout, row)
+        else:
+            return result.stdout
     except subprocess.CalledProcessError as e:
         print("Command failed")
         print("-----")
@@ -139,6 +160,39 @@ def run_lhe_bench(query=True, rerun_lwe=False):
 
     return (df_lwe, df_hybrid)
 
+def run_batch_bench(batch_type="dpir"):
+    # Create the dataframe tables to store results
+    columns=["batch_size", "queries_per_sec", "upload_mb", "download_mb"]
+    df = pd.DataFrame(columns=columns)
+
+    if batch_type == "dpir":
+        bench_string = "dpir"
+        hash_mode = None
+    elif batch_type == "cuckoo":
+        bench_string = "pbc"
+        hash_mode = "cuckoo"
+    else:
+        bench_string = "pbc"
+        hash_mode = "hash"
+        
+    # Run the benchmark
+    out = run_bench(bench_string, hash_mode=hash_mode, packing="storage")
+    queries_per_sec = re.findall(r'Queries-per-sec.*: (\d+.\d+) Q/s', out)
+    upload_mb = re.findall(r'Upload: (\d+.\d+)MB', out)
+    download_mb = re.findall(r'Download: (\d+.\d+)MB', out)
+    
+    for (i, batch_size) in enumerate([8, 16, 24, 32, 40, 48, 56, 64]):
+        row = {
+            "batch_size": batch_size,
+            "queries_per_sec": round(float(queries_per_sec[i]), 2),
+            "upload_mb": round(float(upload_mb[i]), 2),
+            "download_mb": round(float(download_mb[i]), 2),
+        }
+        df.loc[len(df)] = row
+
+    return df
+
+
 # TODO: Output nice graphs
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -164,9 +218,14 @@ if __name__ == '__main__':
     run_all = not (args.batching or args.preprocessing or args.query)
 
     if args.batching or run_all:
-        # TODO
-        #run_batch_bench()
-        pass
+        df_dpir = run_batch_bench("dpir")
+        print(f"\nDPIR batching:\n{df_dpir.to_markdown()}\n")
+        
+        df_hash = run_batch_bench("hash")
+        print(f"\nHash batching:\n{df_hash.to_markdown()}\n")
+        
+        df_cuckoo = run_batch_bench("cuckoo")
+        print(f"\nCuckoo batching:\n{df_cuckoo.to_markdown()}\n")
 
     if args.preprocessing or run_all:
         (df_pre_lwe, df_pre_hybrid) = run_lhe_bench(False, args.rerun_lwe)
