@@ -1,6 +1,8 @@
 package lhe
 
 import (
+    mrand "math/rand"
+
 	"github.com/ryanleh/secure-inference/crypto"
 	"github.com/ryanleh/secure-inference/crypto/rand"
 	m "github.com/ryanleh/secure-inference/matrix"
@@ -43,8 +45,8 @@ func MakeSimpleServer[T m.Elem](
 	params := cryptoCtx.Params
 
 	// Encode the matrix into a DB and initialize the GPU context if available
-	db := NewDB(matrix.Data(), dbElemBits, params.M, params.P)
-	//	println("DB with size: ", db.Data.Rows(), ", ", db.Data.Cols(), "-- P = ", params.P)
+	db := NewDB(matrix.Data(), dbElemBits, params.M, params.P, bench)
+	println("DB with size: ", db.Data.Rows(), ", ", db.Data.Cols(), "-- P = ", params.P)
 
 	var gpuCtx *gpu.Context[T]
 	if gpu.UseGPU() {
@@ -53,12 +55,13 @@ func MakeSimpleServer[T m.Elem](
 	}
 
 	// Generate hint
-	prg := rand.NewBufPRG(rand.NewPRG(seed))
 	var hint *m.Matrix[T]
 	if bench {
 		// Generate a random hint if running benchmarks
-		hint = m.Rand[T](prg, db.Info.L, params.N, 0)
+        rng := mrand.New(mrand.NewSource(0))
+		hint = m.Rand[T](rng, db.Info.L, params.N, 0)
 	} else {
+        prg := rand.NewBufPRG(rand.NewPRG(seed))
 		if mode == None {
 			matrixA := m.Rand[T](prg, db.Info.M, params.N, 0)
 			if gpuCtx != nil {

@@ -38,7 +38,12 @@ func randInstance(rows, cols, pMod, bitsPer uint64) lhe.Server[m.Elem32] {
 
 	// Build server objects
 	ctx := crypto.NewContext[m.Elem32](m.Elem32(0).Bitlen(), cols, pMod)
-	return lhe.MakeSimpleServer[m.Elem32](matrix, bitsPer, ctx, &key, lhe.Hybrid, true, true)
+	//return lhe.MakeSimpleServer[m.Elem32](matrix, bitsPer, ctx, &key, lhe.Hybrid, true, true)
+
+    // TODO: We don't use hybrid mode for benchmarks here since
+    // a) currently our code has the server modulus switch which is wrong (and adds to eval time)
+    // b) we aren't benchmarking encryption time here since it's a preprocessing cost
+	return lhe.MakeSimpleServer[m.Elem32](matrix, bitsPer, ctx, &key, lhe.None, true, true)
 }
 
 // Create a new RPC server

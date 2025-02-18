@@ -3,6 +3,7 @@ package lhe
 import (
 	"math"
 	"math/big"
+    mrand "math/rand"
 
 	"github.com/ryanleh/secure-inference/crypto/rand"
 	m "github.com/ryanleh/secure-inference/matrix"
@@ -22,7 +23,7 @@ type DBInfo struct {
 	P  uint64 // Plaintext modulus
 	Ne uint64 // Number of Z_p elems per DB entry
 
-	gpu bool // Whether or not we're using a GPU
+	GPU bool // Whether or not we're using a GPU
 
 	// For in-memory db compression
 	Squishing uint64
@@ -37,17 +38,21 @@ type DB struct {
 }
 
 // Create a new DB from `data`
-func NewDB(data []m.Elem32, bitsPer uint64, cols uint64, pMod uint64) *DB {
+func NewDB(data []m.Elem32, bitsPer uint64, cols uint64, pMod uint64, bench bool) *DB {
     if pMod == 0 {
         panic("Invalid Pmod")
     }
 
 	// Create DB info
 	dbInfo := newDBInfo(uint64(len(data)), bitsPer, cols, pMod)
-	db := &DB{
-		Info: dbInfo,
-		Data: m.Zeros[m.Elem32](dbInfo.L, dbInfo.M),
-	}
+	db := &DB{Info: dbInfo}
+    if bench {
+        rng := mrand.New(mrand.NewSource(0))
+		db.Data = m.Rand[m.Elem32](rng,dbInfo.L, dbInfo.M, 0)
+        return db
+    } else {
+		db.Data = m.Zeros[m.Elem32](dbInfo.L, dbInfo.M)
+    }
 
 	// Pack data into `db`
     //
@@ -154,7 +159,7 @@ func newDBInfo(num, bitsPer, cols, pMod uint64) *DBInfo {
 		BitsPer: bitsPer,
 		M:       cols,
 		P:       pMod,
-		gpu:     gpu.UseGPU(),
+		GPU:     gpu.UseGPU(),
 	}
 
 	// Compute the number of distinct DB entries
