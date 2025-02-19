@@ -38,3 +38,11 @@ func (s *Server) Answer() []byte {
     s.SendBytes([]byte{1})
     return s.RecvBytes()
 }
+
+func (s *Server) Reset(rows, cols uint64) {
+    // Send reset signal
+    s.SendBytes([]byte{0, 1, 2, 3, 4, 5})
+    
+    params := []uint32 { uint32(rows), uint32(cols) }
+    s.SendUints(params)
+}

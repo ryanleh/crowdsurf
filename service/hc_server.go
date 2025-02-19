@@ -55,7 +55,11 @@ func (s *HCServer) ClientInitRPC(args HintInitRequest, response *HintInitRespons
     // Start a new hint compression server
     // 
     // TODO: Kill old server if it exists
-    s.Server = hint_compr.NewServer(args.Hint.Rows(), args.Hint.Cols())
+    if s.Server != nil {
+        s.Server.Reset(args.Hint.Rows(), args.Hint.Cols())
+    } else {
+        s.Server = hint_compr.NewServer(args.Hint.Rows(), args.Hint.Cols())
+    }
 
 	// Generate new client token + set client state
     start := time.Now()

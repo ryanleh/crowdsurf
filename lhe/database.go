@@ -48,7 +48,7 @@ func NewDB(data []m.Elem32, bitsPer uint64, cols uint64, pMod uint64, bench bool
 	db := &DB{Info: dbInfo}
     if bench {
         rng := mrand.New(mrand.NewSource(0))
-		db.Data = m.Rand[m.Elem32](rng,dbInfo.L, dbInfo.M, 0)
+		db.Data = m.Rand[m.Elem32](rng,dbInfo.L, dbInfo.M, pMod)
         return db
     } else {
 		db.Data = m.Zeros[m.Elem32](dbInfo.L, dbInfo.M)

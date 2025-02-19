@@ -33,11 +33,6 @@ func (c *SimpleClient[T]) Init(h Hint[T]) {
 	// Copy relevant fields
     
     hint := h.(*SimpleHint[T])
-    if hint.Hint == nil {
-        c.compressHint = true
-    } else {
-        c.compressHint = false
-    }
 	c.seedA = hint.Seed
 	c.dbInfo = hint.DBInfo
 	c.mode = hint.Mode

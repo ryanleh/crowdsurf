@@ -34,7 +34,7 @@ func randInstance(rows, cols, pMod, bitsPer uint64) lhe.Server[m.Elem32] {
 	// Generate random matrix
 	prg := rand.NewBufPRG(rand.NewPRG(&key))
 	numLimbs := uint64(math.Ceil(float64(bitsPer) / 32.0))
-	matrix := m.Rand[m.Elem32](prg, rows*numLimbs, cols, 0)
+	matrix := m.Rand[m.Elem32](prg, rows*numLimbs, cols, pMod)
 
 	// Build server objects
 	ctx := crypto.NewContext[m.Elem32](m.Elem32(0).Bitlen(), cols, pMod)
@@ -124,12 +124,12 @@ func (s *Server) AnswerRPC(args PirAnswerRequest, response *PirAnswerResponse) e
 func (s *Server) BatchCapacityRPC(args PirBatchRequest, response *PirBatchResponse) error {
    
     // Compute average communication latency for client
-    avgPirComputeTime := float64(s.totalTime.Milliseconds()) / float64(s.numIters)
-    pirCommTime := args.PirTimeMs - avgPirComputeTime
+//    avgPirComputeTime := float64(s.totalTime.Milliseconds()) / float64(s.numIters)
+//    pirCommTime := args.PirTimeMs - avgPirComputeTime
 
     // Our total time to batch responses is the latency from the hint
     // compression - the communication time of PIR  
-    allowedTime := args.HintTimeMs - pirCommTime
+//    allowedTime := args.HintTimeMs - pirCommTime
 
     // Try batches of increasing size, until the latency for the batch reaches
     // the average time we took to answer
@@ -137,10 +137,10 @@ func (s *Server) BatchCapacityRPC(args PirBatchRequest, response *PirBatchRespon
     // Get the batch granularity in 100s, then 10s, etc.
     //
     // TODO: Better search mechanism here
-    batchSize := uint64(100)
-    bestGuess := batchSize
-    hundreds := false
-    tens := false
+//    batchSize := uint64(100)
+//    bestGuess := batchSize
+//    hundreds := false
+//    tens := false
 
     // Setup PIR client and make a single query that we copy
     pirClient := &lhe.SimpleClient[m.Elem32]{}
@@ -149,41 +149,42 @@ func (s *Server) BatchCapacityRPC(args PirBatchRequest, response *PirBatchRespon
     pirClient.Init(params)
     defer pirClient.Free()
 
-    for {
-        log.Println("Trying batch size ", batchSize)
-        _, queries := pirClient.DummyQuery(batchSize)
-        s.SetBatch(batchSize)
-        
-        start := time.Now()
-        iters := 5
-        for range iters {
-            s.Answer(queries)
-        }
-        elapsed := float64(time.Since(start).Milliseconds()) / float64(iters)
+    //for {
+    //    log.Println("Trying batch size ", batchSize)
+    //    _, queries := pirClient.DummyQuery(batchSize)
+    //    s.SetBatch(batchSize)
+    //    
+    //    start := time.Now()
+    //    iters := 5
+    //    for range iters {
+    //        s.Answer(queries)
+    //    }
+    //    elapsed := float64(time.Since(start).Milliseconds()) / float64(iters)
 
-        if elapsed < allowedTime {
-            bestGuess = batchSize
-            if !hundreds {
-                batchSize += 100
-            } else if !tens {
-                batchSize += 10
-            } else {
-                batchSize += 1
-            }
-        } else {
-            if !hundreds {
-                batchSize -= 90
-                hundreds = true
-            } else if !tens {
-                batchSize -= 9
-                tens = true 
-            } else {
-                response.BatchCapacity = batchSize
-                break
-            }
-        }
-    }
-    response.BatchCapacity = bestGuess
+    //    if elapsed < allowedTime {
+    //        bestGuess = batchSize
+    //        if !hundreds {
+    //            batchSize += 100
+    //        } else if !tens {
+    //            batchSize += 10
+    //        } else {
+    //            batchSize += 1
+    //        }
+    //    } else {
+    //        if !hundreds {
+    //            batchSize -= 90
+    //            hundreds = true
+    //        } else if !tens {
+    //            batchSize -= 9
+    //            tens = true 
+    //        } else {
+    //            response.BatchCapacity = batchSize
+    //            break
+    //        }
+    //    }
+    //}
+    //response.BatchCapacity = bestGuess
+    response.BatchCapacity = 0
 
     return nil
 }
