@@ -122,25 +122,27 @@ func (s *Server) AnswerRPC(args PirAnswerRequest, response *PirAnswerResponse) e
 
 // RPC called to get the batch capacity of the PIR server
 func (s *Server) BatchCapacityRPC(args PirBatchRequest, response *PirBatchResponse) error {
-   
+	log.Printf("Got BatchCapacity RPC Call")
+
     // Compute average communication latency for client
-//    avgPirComputeTime := float64(s.totalTime.Milliseconds()) / float64(s.numIters)
-//    pirCommTime := args.PirTimeMs - avgPirComputeTime
+    avgPirComputeTime := float64(s.totalTime.Milliseconds()) / float64(s.numIters)
+    pirCommTime := args.PirTimeMs - avgPirComputeTime
 
     // Our total time to batch responses is the latency from the hint
     // compression - the communication time of PIR  
-//    allowedTime := args.HintTimeMs - pirCommTime
+    allowedTime := args.HintTimeMs - pirCommTime
+    log.Printf("Allowed time per batch: %0.2fms", allowedTime)
 
     // Try batches of increasing size, until the latency for the batch reaches
     // the average time we took to answer
-
+    //
     // Get the batch granularity in 100s, then 10s, etc.
     //
     // TODO: Better search mechanism here
-//    batchSize := uint64(100)
-//    bestGuess := batchSize
-//    hundreds := false
-//    tens := false
+    batchSize := uint64(100)
+    bestGuess := batchSize
+    hundreds := false
+    tens := false
 
     // Setup PIR client and make a single query that we copy
     pirClient := &lhe.SimpleClient[m.Elem32]{}
@@ -149,43 +151,45 @@ func (s *Server) BatchCapacityRPC(args PirBatchRequest, response *PirBatchRespon
     pirClient.Init(params)
     defer pirClient.Free()
 
-    //for {
-    //    log.Println("Trying batch size ", batchSize)
-    //    _, queries := pirClient.DummyQuery(batchSize)
-    //    s.SetBatch(batchSize)
-    //    
-    //    start := time.Now()
-    //    iters := 5
-    //    for range iters {
-    //        s.Answer(queries)
-    //    }
-    //    elapsed := float64(time.Since(start).Milliseconds()) / float64(iters)
+    for {
+        // TODO
+        if batchSize > 500 {
+            break;
+        }
+        log.Println("Trying batch size: ", batchSize)
+        _, queries := pirClient.DummyQuery(batchSize)
+        s.SetBatch(batchSize)
+        
+        start := time.Now()
+        iters := 5
+        for range iters {
+            s.Answer(queries)
+        }
+        elapsed := float64(time.Since(start).Milliseconds()) / float64(iters)
 
-    //    if elapsed < allowedTime {
-    //        bestGuess = batchSize
-    //        if !hundreds {
-    //            batchSize += 100
-    //        } else if !tens {
-    //            batchSize += 10
-    //        } else {
-    //            batchSize += 1
-    //        }
-    //    } else {
-    //        if !hundreds {
-    //            batchSize -= 90
-    //            hundreds = true
-    //        } else if !tens {
-    //            batchSize -= 9
-    //            tens = true 
-    //        } else {
-    //            response.BatchCapacity = batchSize
-    //            break
-    //        }
-    //    }
-    //}
-    //response.BatchCapacity = bestGuess
-    response.BatchCapacity = 0
-
+        if elapsed < allowedTime {
+            bestGuess = batchSize
+            if !hundreds {
+                batchSize += 100
+            } else if !tens {
+                batchSize += 10
+            } else {
+                batchSize += 1
+            }
+        } else {
+            if !hundreds {
+                batchSize -= 90
+                hundreds = true
+            } else if !tens {
+                batchSize -= 9
+                tens = true 
+            } else {
+                response.BatchCapacity = batchSize
+                break
+            }
+        }
+    }
+    response.BatchCapacity = bestGuess
     return nil
 }
 

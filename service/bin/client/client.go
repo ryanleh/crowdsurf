@@ -26,6 +26,7 @@ func main() {
 	pMod := flag.Uint64("p", 512, "Plaintext modulus")
 	bitsPer := flag.Uint64("bits", 4480, "Bits per database element")
     batchSize := flag.Uint64("batch_size", 3, "Number of queries to make")
+    hintTimeMs := flag.Float64("hint_ms", 0.0, "Hint time")
     flag.Parse()
 
     // Initialize Client 
@@ -84,7 +85,14 @@ func main() {
     avgHDownMB := (float64(hDown) / float64(iters)) / math.Pow(1024.0, 2)
 
     // Now ask the PIR server to compute it's total batch capacity
-    batchCapacity := client.GetBatchCapacity(avgHTimeMS, avgPTimeMS)
+    var batchCapacity uint64
+    if *hintTimeMs != 0 {
+        log.Printf("Getting batch capacity for avg. hint time %0.2fms", *hintTimeMs)
+        batchCapacity = client.GetBatchCapacity(*hintTimeMs, avgPTimeMS)
+    } else {
+        log.Printf("Getting batch capacity for avg. hint time %0.2fms", avgHTimeMS)
+        batchCapacity = client.GetBatchCapacity(avgHTimeMS, avgPTimeMS)
+    }
 
     log.Printf("Answer latency: %0.2fms (p: %0.2fms, h: %0.2fms)\n", avgTimeMS, avgPTimeMS, avgHTimeMS)
     log.Printf("PIR download: %0.2fMB", avgPDownMB)
