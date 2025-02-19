@@ -74,27 +74,31 @@ func MakeClient(
         params.Hint = nil
         pirClient.Init(params)
 
-        // Hint compression server
-        hcClient := hint_compr.NewClient(params.DBInfo.L, 2048, batchSize)
+        // Hint compression server if needed
+        if hcAddr != "" {
+            hcClient := hint_compr.NewClient(params.DBInfo.L, 2048, batchSize)
 
-        // Connect to HC server
-        socket, err := net.Dial("tcp", hcAddr+":8729")
-        if err != nil {
-            log.Println("Error connecting to HC server")
-            panic(err)
-        }
-        hcConn := NewCountingIO(socket)
-        hcRpcClient := rpc.NewClient(hcConn)
+            // Connect to HC server
+            socket, err := net.Dial("tcp", hcAddr+":8729")
+            if err != nil {
+                log.Println("Error connecting to HC server")
+                panic(err)
+            }
+            hcConn := NewCountingIO(socket)
+            hcRpcClient := rpc.NewClient(hcConn)
 
-        // Send hint to server and receive back public params
-        var reply HintInitResponse 
-        err = hcRpcClient.Call("HCServer.ClientInitRPC", &HintInitRequest{hint}, &reply)
-        if err != nil {
-            log.Println("Error initializing client")
-            panic(err)
+            // Send hint to server and receive back public params
+            var reply HintInitResponse 
+            err = hcRpcClient.Call("HCServer.ClientInitRPC", &HintInitRequest{hint}, &reply)
+            if err != nil {
+                log.Println("Error initializing client")
+                panic(err)
+            }
+            hcClient.RecvParams(reply.Params)
+            return &Client{pirConn, pirRpcClient, pirClient, lheType, hcConn, hcRpcClient, hcClient}
+        } else {
+            return &Client{pirConn, pirRpcClient, pirClient, lheType, nil, nil, nil}
         }
-        hcClient.RecvParams(reply.Params)
-        return &Client{pirConn, pirRpcClient, pirClient, lheType, hcConn, hcRpcClient, hcClient}
     
     default:
         panic("Unreachable")
@@ -123,20 +127,22 @@ func (c *Client) Query(inputs []*m.Matrix[m.Elem32]) []lhe.Secret[m.Elem32] {
 	    }
 
         // Register rotation keys on the HC server
-        secrets := make([]*m.Matrix[m.Elem32], len(keys))
-        for i := range keys {
-            key := keys[i].(*lhe.SimpleSecret[m.Elem32])
-            secrets[i] = key.GetInner()
+        if c.hcConn != nil {
+            secrets := make([]*m.Matrix[m.Elem32], len(keys))
+            for i := range keys {
+                key := keys[i].(*lhe.SimpleSecret[m.Elem32])
+                secrets[i] = key.GetInner()
+            }
+            
+            args := HintQueryRequest{
+                Queries: c.hcClient.Query(secrets),
+            }
+            err = c.hcRpcClient.Call("HCServer.QueryRPC", &args, &HintQueryResponse{})
+            if err != nil {
+                log.Printf("Error making query")
+                panic(err)
+            }
         }
-        
-        args := HintQueryRequest{
-            Queries: c.hcClient.Query(secrets),
-        }
-        err = c.hcRpcClient.Call("HCServer.QueryRPC", &args, &HintQueryResponse{})
-        if err != nil {
-            log.Printf("Error making query")
-            panic(err)
-	    }
         return keys
 
     default:
@@ -158,21 +164,22 @@ func (c *Client) Answer(keys []lhe.Secret[m.Elem32]) (float64, float64, []*m.Mat
         // Get hint
         go func() {
             defer wg.Done()
-            
-            start := time.Now()
-            var reply HintAnswerResponse
-            err := c.hcRpcClient.Call("HCServer.AnswerRPC", &HintAnswerRequest{}, &reply)
-            if err != nil {
-                log.Printf("Error making query")
-                panic(err)
-            }
-            results := c.hcClient.Recover(reply.Answers, c.DBInfo().L)
-            hTime = float64(time.Since(start).Milliseconds())
+            if c.hcConn != nil {
+                start := time.Now()
+                var reply HintAnswerResponse
+                err := c.hcRpcClient.Call("HCServer.AnswerRPC", &HintAnswerRequest{}, &reply)
+                if err != nil {
+                    log.Printf("Error making query")
+                    panic(err)
+                }
+                results := c.hcClient.Recover(reply.Answers, c.DBInfo().L)
+                hTime = float64(time.Since(start).Milliseconds())
 
-            // TODO: Better conversion
-            for i := range keys {
-                key := keys[i].(*lhe.SimpleSecret[m.Elem32])
-                key.SetInner(m.NewFromRaw(results[i], uint64(len(results[i])), 1))
+                // TODO: Better conversion
+                for i := range keys {
+                    key := keys[i].(*lhe.SimpleSecret[m.Elem32])
+                    key.SetInner(m.NewFromRaw(results[i], uint64(len(results[i])), 1))
+                }
             }
         }()
 
@@ -190,7 +197,12 @@ func (c *Client) Answer(keys []lhe.Secret[m.Elem32]) (float64, float64, []*m.Mat
             pTime = float64(time.Since(start).Milliseconds())
         }()
         wg.Wait()
-        return pTime, hTime, c.pirClient.Recover(keys, reply.Answers)
+       
+        var result []*m.Matrix[m.Elem32]
+        if c.hcConn != nil {
+           result = c.pirClient.Recover(keys, reply.Answers)
+        }
+        return pTime, hTime, result
     default:
         panic("Unreachable")
     }

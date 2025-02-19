@@ -46,7 +46,7 @@ func MakeSimpleServer[T m.Elem](
 
 	// Encode the matrix into a DB and initialize the GPU context if available
 	db := NewDB(matrix.Data(), dbElemBits, params.M, params.P, bench)
-	println("DB with size: ", db.Data.Rows(), ", ", db.Data.Cols(), "-- P = ", params.P)
+	//println("DB with size: ", db.Data.Rows(), ", ", db.Data.Cols(), "-- P = ", params.P)
 
 	var gpuCtx *gpu.Context[T]
 	if gpu.UseGPU() {

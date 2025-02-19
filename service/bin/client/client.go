@@ -13,14 +13,13 @@ import (
 )
 
 
-var pirAddr = "0.0.0.0"
-var hcAddr = "0.0.0.0"
-
 var key = rand.PRGKey([16]byte{
 	100, 121, 60, 254, 76, 111, 7, 102, 199, 220, 220, 5, 95, 174, 252, 221,
 })
 
 func main() {
+    pirAddr := flag.String("pir", "0.0.0.0", "IP address of PIR server")
+    hcAddr := flag.String("hint", "0.0.0.0", "IP address of hint compression server")
     rows := flag.Uint64("rows", 1024, "# of rows")
 	cols := flag.Uint64("cols", 1024, "# of cols")
 	pMod := flag.Uint64("p", 512, "Plaintext modulus")
@@ -29,11 +28,16 @@ func main() {
     hintTimeMs := flag.Float64("hint_ms", 0.0, "Hint time")
     flag.Parse()
 
+    // If we're passed a hint time, don't contact the hint compression server
+    if *hintTimeMs != 0.0 {
+        *hcAddr = ""
+    }
+
     // Initialize Client 
 	log.Print("Initializing client...")
     start := time.Now()
 	client := service.MakeClient(
-        pirAddr, hcAddr, lhe.SimpleHybrid, *rows, *cols, *pMod, *bitsPer, *batchSize,
+        *pirAddr, *hcAddr, lhe.SimpleHybrid, *rows, *cols, *pMod, *bitsPer, *batchSize,
     )
 	defer client.Free()
     log.Printf("\tTook: %0.2fs", time.Since(start).Seconds())
@@ -56,7 +60,9 @@ func main() {
     // Reset communication
     pComm, hComm := client.GetConns() 
     pComm.Reset()
-    hComm.Reset()
+    if *hintTimeMs == 0.0 {
+        hComm.Reset()
+    }
 
 	log.Println("Setup done.")
     time.Sleep(1 * time.Second)
@@ -75,7 +81,11 @@ func main() {
     }
 
     _, pDown := pComm.GetCounts()
-    _, hDown := hComm.GetCounts()
+
+    var hDown uint64
+    if *hintTimeMs == 0.0 {
+        _, hDown = hComm.GetCounts()
+    }
 
     // Get average stats
     avgTimeMS := totalTime / float64(iters)

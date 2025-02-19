@@ -152,10 +152,6 @@ func (s *Server) BatchCapacityRPC(args PirBatchRequest, response *PirBatchRespon
     defer pirClient.Free()
 
     for {
-        // TODO
-        if batchSize > 500 {
-            break;
-        }
         log.Println("Trying batch size: ", batchSize)
         _, queries := pirClient.DummyQuery(batchSize)
         s.SetBatch(batchSize)
