@@ -60,16 +60,19 @@ to recreate Figure 4 run:
 ```
 python3 run_benches.py -p
 ```
-and to recreate Figure 9 run:
+(Note that if you add the `-r` flag, the benchmark is slightly more accurate
+but will take a few hours to run).
+
+Finally, to recreate Figure 9 run:
 ```
 python3 run_benches.py -b
 ```
 
 ### Table 12
 
-To get end-to-end estimates for the costs of CrowdSurf, you will need access to three machines: a client, an instance for hint compression, and an instance for running PIR.
+To get end-to-end estimates for the costs of CrowdSurf, you will need access to three machines: a client, two CPU-based machines, and a GPU-based machine.
 
-On the hint-compression machine, run the following two commands in different shells:
+One of the CPU-based machines will be hint compression. On this machine, run the following two commands in different shells:
 ```
 cd external/hintless_pir/dpir
 bazel run -c opt //dpir:dpir-server
@@ -77,17 +80,18 @@ bazel run -c opt //dpir:dpir-server
 and
 ```
 cd service/bin/server
-go run . "hint"
+go run . hint
 ```
 
-On the PIR machine, run the following command:
+The remaining CPU + GPU machines will be for PIR. On these machines run:
 ```
+cd service/bin/server
 go run . "pir"
 ```
-Finally, make sure the client machine has access to both machines on port 8728/8729 and run the following command:
+Finally, make sure that all machines accept traffic on ports 8728/8729 and run the following command:
 ```
 cd service
-python3 run_client.py $IP_HINT $IP2_PIR
+python3 run_e2e.py --pir_gpu $GPU_IP --pir_cpu $CPU1_IP --hint $CPU2_IP
 ```
 which will output the costs displayed in Table 12.
 

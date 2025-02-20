@@ -1,15 +1,31 @@
+import argparse
 import re
 import subprocess
 import sys
 import time
 
 from pathlib import Path
-    
 
-# The following benchmark runs e2e benchmarks for several individual shards
-# of the full CrowdSurf system to estimate costs.
-#
-# TODO: Explain full deployment + some of caveats of the estimation
+"""
+The following benchmark runs e2e benchmarks for individual shards of
+the full CrowdSurf system to estimate costs. 
+
+The CrowdSurf deployment works as follows: we have a cluster of CPU-based
+machines that only hint compression, and another cluster of GPU-based
+machines that run PIR. The client downloads some small fraction of the
+database on each query, and our distributional PIR scheme is run on the
+remaining elements. The baseline is the same except it uses all-CPU based
+machines and uses standard PIR.
+
+Since we're using batch codes, the database is already split up into a number
+of `buckets` that a client individually queries. We carefully parameterize our
+scheme so that these buckets fit onto each of the machines _and_ the total
+amount of hint compression (the main bottleneck) is minimized.
+
+The comments at the bottom of the file clarifies how we estimate the total cost
+from these e2e benchmarks.
+"""
+
 #
 # ---- System parameters ---- 
 #
@@ -32,7 +48,7 @@ num_buckets = {
 # Bucket parameters: [queries, row, col, pMod]
 bucket_params = {
     "popular": [8, 8, 164408, 593],
-    "full": [3, 15, 596656, 419],
+    "full": [3, 7, 596656, 419],
     "baseline": [2, 8, 380053, 498],
 }
 
@@ -43,7 +59,7 @@ shards = {
     "baseline": [6, 24]
 }
 
-def run_e2e(batch_size, rows, cols, p, bits=None, hint_ms=None):
+def run_e2e(batch_size, rows, cols, p, pir_ip, hint_ip, bits=None, hint_ms=None):
     # First, ensure that the hint compression library is built
     cwd = Path.cwd()
     bazel_path = (cwd / "../external/hintless_pir").resolve()
@@ -73,6 +89,7 @@ def run_e2e(batch_size, rows, cols, p, bits=None, hint_ms=None):
         cmd = [
             "go", "run", ".", f"-rows={rows}", f"-cols={cols}",
             f"-batch_size={batch_size}", f"-p={p}",
+            f"-pir={pir_ip}", f"-hint={hint_ip}",
             f"-hint_ms={hint_ms}" if hint_ms else None,
             f"-bits={bits}" if bits else None,
         ]
@@ -124,32 +141,46 @@ def pprint_dict(to_print, name):
     print("}")
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--pir_gpu', type=str, default="0.0.0.0", help="PIR (GPU) Server IP")
+    parser.add_argument('--pir_cpu', type=str, default="0.0.0.0", help="PIR (CPU) Server IP")
+    parser.add_argument('--hint', type=str, default="0.0.0.0", help="Hint Compression Server IP")
+    args = parser.parse_args()
+
+    # In order to calculate costs we need two numbers:
+    #   1) The latency to perform hint compression
+    #   2) The amount of queries the PIR server can answer in time (1),
+    #      keeping into account the network latency of queries 
+    #
+    # Thus, in the first e2e test, we compute the latency for hint compression
+    # on a single machine (this is the same across all shards), and then we use
+    # that number to individually compute the PIR batch capacities. The e2e
+    # costs follow from these two metrics. 
+
     # CrowdSurf has two different shard types corresponding to the popular or
     # full database (minus the number of entries that are stored locally)
     #
     # 1) Popular shard
-    # --> This benchmark makes 8 queries to the hint compression machine (using
-    #     all of its cores) and thus, is the number we should use for
-    #     benchmarking the PIR batch capacity of the other shards (since they
-    #     don't make 8 queries)
-
-    ## TODO: Update bits
-    _, _, hint_ms, batch_cap_pop = run_e2e(*bucket_params["popular"], bits=1)
+    _, _, hint_ms, batch_cap_pop = run_e2e(
+        *bucket_params["popular"],
+        args.pir_gpu,
+        args.hint,
+    )
 
     # 2) Full shard
-    #
-    # TODO: Add in option to add hint time
     _, _, _, batch_cap_full = run_e2e(
         *bucket_params["full"],
+        args.pir_gpu,
+        args.hint,
         hint_ms=hint_ms,
-        bits=1
     )
 
     # The baseline has a single shard corresponding to the entire database
     _, _, _, batch_cap_base = run_e2e(
         *bucket_params["baseline"],
+        args.pir_cpu,
+        args.hint,
         hint_ms=hint_ms,
-        bits=1
     )
 
     ## NOTE: These were the numbers we got when running this script
@@ -171,5 +202,3 @@ if __name__ == '__main__':
     # Print stuff
     pprint_dict(baseline_metrics, "Baseline metrics")
     pprint_dict(crowdsurf_metrics, "CrowdSurf metrics")
-
-    # TODO: Add in metrics for total time and communication
