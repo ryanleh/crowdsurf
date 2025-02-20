@@ -83,6 +83,9 @@ func (s *Server) ClientInitRPC(args PirInitRequest, response *PirInitResponse) e
 	log.Printf("Got ClientInit RPC Call")
 
     // Configure a new PIR server based on the received params
+    if s.Server != nil {
+        s.Server.Free()
+    }
     s.Server = randInstance(args.Rows, args.Cols, args.PMod, args.BitsPer)
     s.Server.SetBatch(args.BatchSize)
     s.totalTime = time.Duration(0)
