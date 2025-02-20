@@ -16,7 +16,7 @@ func benchmarkPreprocessing[T m.Elem]() testing.BenchmarkResult {
 	numLimbs := uint64(math.Ceil(float64(*bitsPer) / 32.0))
 	matrix := m.Rand[m.Elem32](prg, *rows*numLimbs, *cols, 0)
 	ctx := crypto.NewContext[T](T(0).Bitlen(), *cols, *pMod)
-	db := lhe.NewDB(matrix.Data(), *bitsPer, ctx.Params.M, ctx.Params.P)
+	db := lhe.NewDB(matrix.Data(), *bitsPer, ctx.Params.M, ctx.Params.P, true)
     
 	var result testing.BenchmarkResult
 	if mode == lhe.Hybrid {
