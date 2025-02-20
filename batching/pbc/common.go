@@ -15,11 +15,9 @@ import (
 // Cuckoo hashing constants
 const K float64 = 1.5
 const D uint64 = 3
-const MAX_CUCKOO_ITERS uint64 = 2000
+const MAX_CUCKOO_ITERS uint64 = 500
 
-// Basic bucketing constants
-//
-// TODO: Figure out how to do this
+// Hash-based constants
 const P uint64 = 2
 
 // An enum representing which type of PBC to use
