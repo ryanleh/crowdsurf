@@ -26,8 +26,10 @@ This repository contains several folders that implement the different building b
 
 ## Build guide
 
-First, install Go following the directions [here](https://go.dev/doc/install).
-
+First, install Go (**version 1.22**) following the directions [here](https://go.dev/doc/install). Then, ensure your machine has CMake, a C++ compiler (e.g., clang), and GMP. On Ubunutu, these can be installed via:
+```
+sudo apt install cmake clang libgmp-dev
+```
 Next, pull in external submodules:
 ```
 git submodule update --init
@@ -45,6 +47,8 @@ Finally, test that everything is working:
 ```
 go test ./...
 ```
+
+To run hint-compression (used in the end-to-end experiments), you will need to install Bazel (**version 7.2.1**) following the directions [here](https://bazel.build/install/ubuntu). Additionally, the python scripts below require the `numpy`, `tabulate`, and `pandas` Python3 libraries.
 
 ## Experiments
 
