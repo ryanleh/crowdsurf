@@ -52,3 +52,10 @@ func (c *Client) Recover(answer []byte, rows uint64) [][]m.Elem32 {
 
     return results
 }
+
+func (c *Client) Reset(rows, cols, batchSize uint64) {
+    // Send reset signal
+    c.SendBytes([]byte{0, 1, 2, 3, 4, 5})
+    params := []uint32 { uint32(rows), uint32(cols), uint32(batchSize) }
+    c.SendUints(params)
+}

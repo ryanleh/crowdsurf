@@ -33,11 +33,6 @@ func (c *SimpleClient[T]) Init(h Hint[T]) {
 	// Copy relevant fields
     
     hint := h.(*SimpleHint[T])
-    if hint.Hint == nil {
-        c.compressHint = true
-    } else {
-        c.compressHint = false
-    }
 	c.seedA = hint.Seed
 	c.dbInfo = hint.DBInfo
 	c.mode = hint.Mode
@@ -115,7 +110,7 @@ func (c *SimpleClient[T]) Query(inputs []*m.Matrix[T]) ([]Secret[T], []Query[T])
 
 			// Pad the query to match the dimensions of the compressed DB if
 			// applicable
-			if !c.dbInfo.gpu && c.dbInfo.Squishing != 0 && c.dbInfo.M%c.dbInfo.Squishing != 0 {
+			if !c.dbInfo.GPU && c.dbInfo.Squishing != 0 && c.dbInfo.M%c.dbInfo.Squishing != 0 {
 				query.Query.AppendZeros(c.dbInfo.Squishing - (c.dbInfo.M % c.dbInfo.Squishing))
 			}
 			secrets[i] = secret
@@ -150,7 +145,7 @@ func (c *SimpleClient[T]) DummyQuery(num uint64) ([]Secret[T], []Query[T]) {
 			// applicable
 			//
 			// TODO: Is this necessary?
-			if !c.dbInfo.gpu && c.dbInfo.Squishing != 0 && c.dbInfo.M%c.dbInfo.Squishing != 0 {
+			if !c.dbInfo.GPU && c.dbInfo.Squishing != 0 && c.dbInfo.M%c.dbInfo.Squishing != 0 {
 				query.Query.AppendZeros(c.dbInfo.Squishing - (c.dbInfo.M % c.dbInfo.Squishing))
 			}
 			secrets[i] = &SimpleSecret[T]{}
@@ -178,7 +173,7 @@ func (c *SimpleClient[T]) Recover(secrets []Secret[T], answers []Answer[T]) []*m
         }
 
 		var answer *SimpleAnswer[T]
-		if c.dbInfo.gpu {
+		if c.dbInfo.GPU {
 			// TODO: Remove the copy / transpose here
 			a := answers[0].(*SimpleAnswer[T]).Answer
 			colCopy := m.New[T](a.Rows(), 1)

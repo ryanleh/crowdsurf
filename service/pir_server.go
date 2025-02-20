@@ -34,11 +34,16 @@ func randInstance(rows, cols, pMod, bitsPer uint64) lhe.Server[m.Elem32] {
 	// Generate random matrix
 	prg := rand.NewBufPRG(rand.NewPRG(&key))
 	numLimbs := uint64(math.Ceil(float64(bitsPer) / 32.0))
-	matrix := m.Rand[m.Elem32](prg, rows*numLimbs, cols, 0)
+	matrix := m.Rand[m.Elem32](prg, rows*numLimbs, cols, pMod)
 
 	// Build server objects
 	ctx := crypto.NewContext[m.Elem32](m.Elem32(0).Bitlen(), cols, pMod)
-	return lhe.MakeSimpleServer[m.Elem32](matrix, bitsPer, ctx, &key, lhe.Hybrid, true, true)
+	//return lhe.MakeSimpleServer[m.Elem32](matrix, bitsPer, ctx, &key, lhe.Hybrid, true, true)
+
+    // TODO: We don't use hybrid mode for benchmarks here since
+    // a) currently our code has the server modulus switch which is wrong (and adds to eval time)
+    // b) we aren't benchmarking encryption time here since it's a preprocessing cost
+	return lhe.MakeSimpleServer[m.Elem32](matrix, bitsPer, ctx, &key, lhe.None, true, true)
 }
 
 // Create a new RPC server
@@ -117,7 +122,8 @@ func (s *Server) AnswerRPC(args PirAnswerRequest, response *PirAnswerResponse) e
 
 // RPC called to get the batch capacity of the PIR server
 func (s *Server) BatchCapacityRPC(args PirBatchRequest, response *PirBatchResponse) error {
-   
+	log.Printf("Got BatchCapacity RPC Call")
+
     // Compute average communication latency for client
     avgPirComputeTime := float64(s.totalTime.Milliseconds()) / float64(s.numIters)
     pirCommTime := args.PirTimeMs - avgPirComputeTime
@@ -125,10 +131,11 @@ func (s *Server) BatchCapacityRPC(args PirBatchRequest, response *PirBatchRespon
     // Our total time to batch responses is the latency from the hint
     // compression - the communication time of PIR  
     allowedTime := args.HintTimeMs - pirCommTime
+    log.Printf("Allowed time per batch: %0.2fms", allowedTime)
 
     // Try batches of increasing size, until the latency for the batch reaches
     // the average time we took to answer
-
+    //
     // Get the batch granularity in 100s, then 10s, etc.
     //
     // TODO: Better search mechanism here
@@ -145,7 +152,7 @@ func (s *Server) BatchCapacityRPC(args PirBatchRequest, response *PirBatchRespon
     defer pirClient.Free()
 
     for {
-        log.Println("Trying batch size ", batchSize)
+        log.Println("Trying batch size: ", batchSize)
         _, queries := pirClient.DummyQuery(batchSize)
         s.SetBatch(batchSize)
         
@@ -179,7 +186,6 @@ func (s *Server) BatchCapacityRPC(args PirBatchRequest, response *PirBatchRespon
         }
     }
     response.BatchCapacity = bestGuess
-
     return nil
 }
 

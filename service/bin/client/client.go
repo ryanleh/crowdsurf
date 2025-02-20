@@ -13,26 +13,31 @@ import (
 )
 
 
-var pirAddr = "0.0.0.0"
-var hcAddr = "0.0.0.0"
-
 var key = rand.PRGKey([16]byte{
 	100, 121, 60, 254, 76, 111, 7, 102, 199, 220, 220, 5, 95, 174, 252, 221,
 })
 
 func main() {
+    pirAddr := flag.String("pir", "0.0.0.0", "IP address of PIR server")
+    hcAddr := flag.String("hint", "0.0.0.0", "IP address of hint compression server")
     rows := flag.Uint64("rows", 1024, "# of rows")
 	cols := flag.Uint64("cols", 1024, "# of cols")
 	pMod := flag.Uint64("p", 512, "Plaintext modulus")
 	bitsPer := flag.Uint64("bits", 4480, "Bits per database element")
     batchSize := flag.Uint64("batch_size", 3, "Number of queries to make")
+    hintTimeMs := flag.Float64("hint_ms", 0.0, "Hint time")
     flag.Parse()
+
+    // If we're passed a hint time, don't contact the hint compression server
+    if *hintTimeMs != 0.0 {
+        *hcAddr = ""
+    }
 
     // Initialize Client 
 	log.Print("Initializing client...")
     start := time.Now()
 	client := service.MakeClient(
-        pirAddr, hcAddr, lhe.SimpleHybrid, *rows, *cols, *pMod, *bitsPer, *batchSize,
+        *pirAddr, *hcAddr, lhe.SimpleHybrid, *rows, *cols, *pMod, *bitsPer, *batchSize,
     )
 	defer client.Free()
     log.Printf("\tTook: %0.2fs", time.Since(start).Seconds())
@@ -55,7 +60,9 @@ func main() {
     // Reset communication
     pComm, hComm := client.GetConns() 
     pComm.Reset()
-    hComm.Reset()
+    if *hintTimeMs == 0.0 {
+        hComm.Reset()
+    }
 
 	log.Println("Setup done.")
     time.Sleep(1 * time.Second)
@@ -74,7 +81,11 @@ func main() {
     }
 
     _, pDown := pComm.GetCounts()
-    _, hDown := hComm.GetCounts()
+
+    var hDown uint64
+    if *hintTimeMs == 0.0 {
+        _, hDown = hComm.GetCounts()
+    }
 
     // Get average stats
     avgTimeMS := totalTime / float64(iters)
@@ -84,7 +95,14 @@ func main() {
     avgHDownMB := (float64(hDown) / float64(iters)) / math.Pow(1024.0, 2)
 
     // Now ask the PIR server to compute it's total batch capacity
-    batchCapacity := client.GetBatchCapacity(avgHTimeMS, avgPTimeMS)
+    var batchCapacity uint64
+    if *hintTimeMs != 0 {
+        log.Printf("Getting batch capacity for avg. hint time %0.2fms", *hintTimeMs)
+        batchCapacity = client.GetBatchCapacity(*hintTimeMs, avgPTimeMS)
+    } else {
+        log.Printf("Getting batch capacity for avg. hint time %0.2fms", avgHTimeMS)
+        batchCapacity = client.GetBatchCapacity(avgHTimeMS, avgPTimeMS)
+    }
 
     log.Printf("Answer latency: %0.2fms (p: %0.2fms, h: %0.2fms)\n", avgTimeMS, avgPTimeMS, avgHTimeMS)
     log.Printf("PIR download: %0.2fMB", avgPDownMB)
