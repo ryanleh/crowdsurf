@@ -99,6 +99,9 @@ python3 run_e2e.py --pir_gpu $GPU_IP --pir_cpu $CPU1_IP --hint $CPU2_IP
 ```
 which will output the costs displayed in Table 12.
 
+## Acknowledgements
+Much of the code here was adopted from [Tiptoe](https://github.com/ahenzinger/underhood).
+
 ## License
 
 CrowdSurf is licensed under either of the following licenses, at your discretion.
