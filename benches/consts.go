@@ -5,12 +5,11 @@ var ks = []uint64{1, 8, 32, 64, 128, 256, 512, 1024, 2048}
 
 // Batching parameters from paper (4GB database)
 var bs = []uint64{8, 16, 24, 32, 40, 48, 56, 64}
-var sizes = []uint64{68951263, 77048711, 72970119, 69291990, 66555742, 64504344, 62683952, 61071845}
+var sizes = []uint64{68951263, 77048711, 72970119, 69291990, 66555742, 64504344, 62683952, 61071845} // TODO: not needed
 var bits = []uint64{498, 446, 471, 496, 516, 533, 548, 563}
 
-// dPIR parameters TODO: (need to be adjusted per-distribution)
-//var avgCaseErrs = []float64{0.05, 0.1, 0.15, 0.2, 0.25, 0.3}
-var avgCaseErrs = []float64{0.2}
+// dPIR parameters
+var avgErr = 0.2
 
 // These are cutoffs for worst-case correctness error 0.99
 var alpha = 0.99

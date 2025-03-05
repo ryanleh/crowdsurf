@@ -25,15 +25,30 @@ sqrt_Ns = {
     64: [8945, 12650, 18190, 25724, 31506, 36556],
 }
 
+# Batching experiment parameters
+#
+# (Metadata: exact DB sizes per batch size)
+# 68951263, 77048711, 72970119, 69291990, 66555742, 64504344, 62683952, 61071845
+batch_sizes = [8, 16, 24, 32, 40, 48, 56, 64]
+batch_bits = [498, 446, 471, 496, 516, 533, 548, 563]
+batch_rows = [25575, 25578, 25584, 25596, 25593, 25578, 25560, 25544]
+batch_cols = [148283, 147603, 148314, 146186, 148232, 146269, 147146, 148233]
+batch_pMods = [593, 593, 593, 593, 593, 593, 593, 593]
+batch_cutoffs = [5963025, 2774289, 1343345, 6879535, 8756458, 9814302, 10482433, 11031655]
+
 def run_bench(
     bench,
     db_size=None,
     log_q=None,
     p=None,
-    sqrt_N=None,
+    rows=None,
+    cols=None,
     mode=None,
     hash_mode=None,
     packing="balanced",
+    bits=None,
+    batch_size=None,
+    cutoff=None,
     iters=None
 ):
     result = None
@@ -43,9 +58,12 @@ def run_bench(
             f'-packing={packing}',
             f'-q={log_q}' if log_q else None,
             f'-p={p}' if p else None,
-            f'-rows={sqrt_N}' if sqrt_N else None,
-            f'-cols={sqrt_N}' if sqrt_N else None,
+            f'-rows={rows}' if rows else None,
+            f'-cols={cols}' if cols else None,
             f'-mode={mode}' if mode else None,
+            f'-bits={bits}' if bits else None,
+            f'-batch={batch_size}' if batch_size else None,
+            f'-cutoff={cutoff}' if cutoff else None,
             f'-hash={hash_mode}' if hash_mode else None,
             f'-test.benchtime={iters}x' if iters else None
         ]
@@ -63,7 +81,7 @@ def run_bench(
                 "size": db_size,
                 "log_q": log_q,
                 "p": p,
-                "sqrt_N": sqrt_N,
+                "sqrt_N": rows,
             }
             return (result.stdout, row)
         else:
@@ -110,7 +128,7 @@ def run_lhe_bench(query=True, rerun_lwe=False):
             
             # 1) Run the hybrid benchmark
             (out, row) = run_bench(
-                bench_string, db_sizes_gb[i], log_q, p, sqrt_N, "hybrid",
+                bench_string, db_sizes_gb[i], log_q, p, sqrt_N, sqrt_N, "hybrid",
                 iters=5
             )
             row[metric] = parser(out, db_sizes_gb[i])
@@ -121,7 +139,7 @@ def run_lhe_bench(query=True, rerun_lwe=False):
             # If not rerunning preprocessing, we only collect one sample
             if query or (rerun_lwe or (log_q==32 and i==0)):
                 (out, row) = run_bench(
-                    bench_string, db_sizes_gb[i], log_q, p, sqrt_N, "none"
+                    bench_string, db_sizes_gb[i], log_q, p, sqrt_N, sqrt_N, "none"
                 )
                 row[metric] = parser(out, db_sizes_gb[i])
                 df_lwe.loc[len(df_lwe)] = row
@@ -176,17 +194,27 @@ def run_batch_bench(batch_type="dpir"):
         hash_mode = "hash"
         
     # Run the benchmark
-    out = run_bench(bench_string, hash_mode=hash_mode, packing="storage")
-    queries_per_sec = re.findall(r'Queries-per-sec.*: (\d+.\d+) Q/s', out)
-    upload_mb = re.findall(r'Upload: (\d+.\d+)MB', out)
-    download_mb = re.findall(r'Download: (\d+.\d+)MB', out)
-    
-    for (i, batch_size) in enumerate([8, 16, 24, 32, 40, 48, 56, 64]):
+    for (i, batch) in enumerate(batch_sizes):
+        out = run_bench(
+            bench_string,
+            p=batch_pMods[i],
+            rows=batch_rows[i],
+            cols=batch_cols[i],
+            bits=batch_bits[i],
+            cutoff=batch_cutoffs[i],
+            batch_size=batch,
+            hash_mode=hash_mode,
+            packing="storage"
+        )
+
+        queries_per_sec = re.search(r'.*: (\d+.\d+) Q/s', out).group(1)
+        upload_mb = re.search(r'Upload: (\d+.\d+)MB', out).group(1)
+        download_mb = re.search(r'Download: (\d+.\d+)MB', out).group(1)
         row = {
-            "batch_size": batch_size,
-            "queries_per_sec": round(float(queries_per_sec[i]), 2),
-            "upload_mb": round(float(upload_mb[i]), 2),
-            "download_mb": round(float(download_mb[i]), 2),
+            "batch_size": batch,
+            "queries_per_sec": round(float(queries_per_sec), 2),
+            "upload_mb": round(float(upload_mb), 2),
+            "download_mb": round(float(download_mb), 2),
         }
         df.loc[len(df)] = row
 

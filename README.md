@@ -26,7 +26,7 @@ This repository contains several folders that implement the different building b
 
 ## Build guide
 
-First, install Go (**version 1.22**) following the directions [here](https://go.dev/doc/install). Then, ensure your machine has CMake, a C++ compiler (e.g., clang), and GMP. On Ubunutu, these can be installed via:
+First, install Go (**version 1.22.12**–newer versions aren't supported at the moment) by downloading the appropriate archive from [here](https://go.dev/dl/) and following the installation directions [here](https://go.dev/doc/install). Then, ensure your machine has CMake, a C++ compiler (e.g., clang), and GMP. On Ubunutu, these can be installed via:
 ```
 sudo apt install cmake clang libgmp-dev
 ```

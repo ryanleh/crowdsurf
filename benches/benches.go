@@ -19,6 +19,8 @@ var rows *uint64
 var cols *uint64
 var pMod *uint64
 var bitsPer *uint64
+var batchSize *uint64
+var cutoff *uint64
 var mode lhe.Mode
 var hashMode pbc.Mode
 var packing batching.Packing
@@ -64,9 +66,6 @@ func runBench[T m.Elem](benchType string) {
 	case "dpir":
 		benchmarkDPIR[T]()
 	
-    case "correctness":
-		benchmarkDpirCorrectness[T]()
-
     case "size":
         computeSizes()
 
@@ -83,10 +82,12 @@ func main() {
 	logQ := flag.Int("q", 32, "log q (32 / 64)")
 	pMod = flag.Uint64("p", 1<<9, "plaintext modulus")
 	bitsPer = flag.Uint64("bits", 9, "bits per DB element")
-	benchType := flag.String("bench", "throughput", "(throughput/preprocessing/pbc/dpir/correctness)")
+	benchType := flag.String("bench", "throughput", "(throughput/preprocessing/pbc/dpir)")
 	modeType := flag.String("mode", "hybrid", "(hybrid/none)")
 	hashModeType := flag.String("hash", "cuckoo", "(cuckoo/hash)")
 	packingType := flag.String("packing", "balanced", "(balanced/comm/storage)")
+	batchSize = flag.Uint64("batch", 1, "batch size")
+	cutoff = flag.Uint64("cutoff", 0, "dPIR cutoff")
 	memprofile := flag.String("memprofile", "", "write memory profile to `file`")
 	flag.Parse()
 
