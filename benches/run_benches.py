@@ -52,50 +52,55 @@ def run_bench(
     iters=None
 ):
     result = None
-    try:
-        cmd = [
-            'go', 'run', '.', f'-bench={bench}',
-            f'-packing={packing}',
-            f'-q={log_q}' if log_q else None,
-            f'-p={p}' if p else None,
-            f'-rows={rows}' if rows else None,
-            f'-cols={cols}' if cols else None,
-            f'-mode={mode}' if mode else None,
-            f'-bits={bits}' if bits else None,
-            f'-batch={batch_size}' if batch_size else None,
-            f'-cutoff={cutoff}' if cutoff else None,
-            f'-hash={hash_mode}' if hash_mode else None,
-            f'-test.benchtime={iters}x' if iters else None
-        ]
-        cmd = list(filter(None, cmd))
-        print(f"Running command: {" ".join(cmd)}")
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        # If `db_size` is passed then we're running an LHE query
-        if db_size:
-            row = {
-                "size": db_size,
-                "log_q": log_q,
-                "p": p,
-                "sqrt_N": rows,
-            }
-            return (result.stdout, row)
-        else:
-            return result.stdout
-    except subprocess.CalledProcessError as e:
-        print("Command failed")
-        print("-----")
-        print(f"STDOUT: {e.stdout}") 
-        print(f"STDERR: {e.stderr}") 
-        print("-----")
-    except Exception as e:
-        print(
-            f"Command failed: {e}"
-        )
+
+    # We retry the command up to 5 times until it succeeds
+    retries = 0
+    while True:
+        try:
+            cmd = [
+                'go', 'run', '.', f'-bench={bench}',
+                f'-packing={packing}',
+                f'-q={log_q}' if log_q else None,
+                f'-p={p}' if p else None,
+                f'-rows={rows}' if rows else None,
+                f'-cols={cols}' if cols else None,
+                f'-mode={mode}' if mode else None,
+                f'-bits={bits}' if bits else None,
+                f'-batch={batch_size}' if batch_size else None,
+                f'-cutoff={cutoff}' if cutoff else None,
+                f'-hash={hash_mode}' if hash_mode else None,
+                f'-test.benchtime={iters}x' if iters else None
+            ]
+            cmd = list(filter(None, cmd))
+            print(f"Running command: {" ".join(cmd)}")
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            # If `db_size` is passed then we're running an LHE query
+            if db_size:
+                row = {
+                    "size": db_size,
+                    "log_q": log_q,
+                    "p": p,
+                    "sqrt_N": rows,
+                }
+                return (result.stdout, row)
+            else:
+                return result.stdout
+        except subprocess.CalledProcessError as e:
+            if retries < 5:
+                print(f"Command failed on attempt {retries}, trying again")
+                retries += 1
+                continue
+            else:
+                print("Command failed")
+                print("-----")
+                print(f"STDOUT: {e.stdout}") 
+                print(f"STDERR: {e.stderr}") 
+                print("-----")
 
 
 def run_lhe_bench(query=True, rerun_lwe=False):

@@ -50,6 +50,14 @@ go test ./...
 
 To run hint-compression (used in the end-to-end experiments), you will need to install Bazel (**version 7.2.1**) following the directions [here](https://bazel.build/install/ubuntu). Additionally, the python scripts below require the `numpy`, `tabulate`, and `pandas` Python3 libraries.
 
+To enable GPU-support, you need an NVIDIA GPU with [CUDA Toolkit 12.4](https://developer.nvidia.com/cuda-12-4-0-download-archive) installed. Ensure that CMake can find the CUDA installation; for Ubuntu, this can be done by adding the following to your `~/.bashrc` file:
+```
+export CUDA_HOME=/usr/local/cuda
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
+export PATH=$PATH:$CUDA_HOME/bin
+export CUDACXX=/usr/local/cuda/bin/nvcc
+```
+
 ## Experiments
 
 Below we outline how to recreate several of the key figures in our paper
@@ -74,12 +82,12 @@ python3 run_benches.py -b
 
 ### Table 12
 
-To get end-to-end estimates for the costs of CrowdSurf, you will need access to three machines: a client, two CPU-based machines, and a GPU-based machine.
+To get end-to-end estimates for the costs of CrowdSurf, you will need access to four machines: a client (anything with >4GB of memory), two CPU-based machines, and a GPU-based machine.
 
 One of the CPU-based machines will be hint compression. On this machine, run the following two commands in different shells:
 ```
 cd external/hintless_pir/dpir
-bazel run -c opt //dpir:dpir-server
+bazel run -c opt //dpir:dpir_server
 ```
 and
 ```

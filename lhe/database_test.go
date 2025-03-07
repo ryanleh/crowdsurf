@@ -21,7 +21,7 @@ func (db *DB) getElem(i uint64) []m.Elem32 {
 }
 
 func testDBInit(t *testing.T, data []m.Elem32, bitsPer, cols, pMod uint64) *DB {
-	db := NewDB(data, bitsPer, cols, pMod)
+	db := NewDB(data, bitsPer, cols, pMod, false)
 
 	numLimbs := uint64(math.Ceil(float64(bitsPer) / 32.0))
 	for i := range uint64(len(data)) / numLimbs {

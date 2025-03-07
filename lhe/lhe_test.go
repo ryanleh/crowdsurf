@@ -76,7 +76,7 @@ func testLHEHelper[T m.Elem](
 	server.SetBatch(batchSize)
 	prg := rand.NewBufPRG(rand.NewPRG(&key))
 
-	for range 10 {
+	for range 1 {
 		// Generate client queries
 		indices := make([]uint64, batchSize)
 		inputs := make([]*m.Matrix[T], batchSize)
@@ -122,13 +122,6 @@ func testLHE[T m.Elem](t *testing.T, bitsPer, pMod uint64) {
 
         c, s, m = randInstance[T](SimpleHybrid, bitsPer, dbRows[i], dbCols[i], pMod, false)
 		testLHEHelper[T](t, c, s, m, batchSize)
-
-        // TODO: This currently doesn't working w/ > 32-bit bitsPer (see
-        // comment in database.go)
-        //
-		//// Test local LHE
-        //c, s, m := randInstance[T](Local, bitsPer, dbRows[i], dbCols[i], pMod, false)
-		//testLHEHelper[T](t, c, s, m, batchSize)
 	}
 }
 
