@@ -34,6 +34,17 @@ Next, pull in external submodules:
 ```
 git submodule update --init
 ```
+> **Optional:** To run hint-compression (used in the end-to-end experiments), you will need to install Bazel (**version 7.2.1**) following the directions [here](https://bazel.build/install/ubuntu). Additionally, the python scripts below require the `numpy`, `tabulate`, and `pandas` Python3 libraries.
+
+> **Optional:** To enable GPU-support, you need an NVIDIA GPU with [CUDA Toolkit 12.4](https://developer.nvidia.com/cuda-12-4-0-download-archive) installed. Ensure that CMake can find the CUDA installation; for Ubuntu, this can be done by adding the following to your `~/.bashrc` file:
+>```
+>export CUDA_HOME=/usr/local/cuda
+>export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
+>export PATH=$PATH:$CUDA_HOME/bin
+>export CUDACXX=/usr/local/cuda/bin/nvcc
+>```
+
+
 Install the required C++ libraries:
 ```
 cmake -S external/SEAL/ -B external/SEAL/build -DCMAKE_INSTALL_PREFIX=$PWD/external/SEAL/build -DSEAL_USE_INTEL_HEXL=ON
@@ -48,15 +59,6 @@ Finally, test that everything is working:
 go test ./...
 ```
 
-To run hint-compression (used in the end-to-end experiments), you will need to install Bazel (**version 7.2.1**) following the directions [here](https://bazel.build/install/ubuntu). Additionally, the python scripts below require the `numpy`, `tabulate`, and `pandas` Python3 libraries.
-
-To enable GPU-support, you need an NVIDIA GPU with [CUDA Toolkit 12.4](https://developer.nvidia.com/cuda-12-4-0-download-archive) installed. Ensure that CMake can find the CUDA installation; for Ubuntu, this can be done by adding the following to your `~/.bashrc` file:
-```
-export CUDA_HOME=/usr/local/cuda
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
-export PATH=$PATH:$CUDA_HOME/bin
-export CUDACXX=/usr/local/cuda/bin/nvcc
-```
 
 ## Experiments
 
